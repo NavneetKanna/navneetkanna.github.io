@@ -4,3 +4,6 @@
 
 layout: home
 ---
+Welcome to my personal website! This is an introduction about me.
+
+Check out my [blog](/blog/) for my latest posts.
