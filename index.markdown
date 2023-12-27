@@ -15,7 +15,7 @@ I have come to reliased that the best way to test one's knowledge on any topic i
 
 I have decided to take top-to-bottom approach. I will start from ML and go all the way down till transistors, understanding how everything works and explaining it as I learn in my blogs.
 
-Check out my [blogs](https://navneetkanna.github.io/blog/).
+Check out my [blog](https://navneetkanna.github.io/blog/).
 
 
 
