@@ -5,7 +5,7 @@
 layout: home
 ---
 
-**TL;DR: Want to learn how everything works fundamentally, from machine learning down till transistors.**
+**TL;DR: Want to learn how everything works fundamentally, from machine learning all the way down till transistors.**
 
 Hello, I'm VS Navneet Kanna, a 23-year-old Software Developer and ML Engineer. My interests are machine learning, coding, physics and playing the piano (baroque, claasical and romantic). I hold a master's degree in Robotics and AI from the University of Glasgow and I am currently working in a startup. 
 
