@@ -18,9 +18,3 @@ I have come to reliase that the best way to test one's knowledge on any topic is
 I have decided to take top-to-bottom approach. I will start from deep learning and go all the way down till transistors, understanding how everything works and explaining it as I learn in my blogs.
 
 Check out my [blog](https://navneetkanna.github.io/blog/).
-
-
-
-
-
-
