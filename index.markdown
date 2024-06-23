@@ -5,16 +5,16 @@
 layout: home
 ---
 
-**TL;DR: Want to learn how everything works fundamentally, from machine learning all the way down till transistors.**
+**TL;DR: Learn how everything works from machine learning down to transistors.**
 
-Hello, I'm VS Navneet Kanna, a 25-year-old Software Developer and ML Engineer. My interests are machine learning, coding, physics and playing the piano (baroque, claasical and romantic). I hold a master's degree in Robotics and AI from the University of Glasgow and I am currently working in a startup. 
+Hi, I'm VS Navneet Kanna. I'm 25 years old and work as a Software and Machine Learning Engineer. I love machine learning, coding, physics, and playing the piano (Baroque, Classical, and Romantic music). I have a master's degree in Robotics and AI from the University of Glasgow and currently work at a startup.
 
-Whether it is physics or writing code or just things in general, I am always curious to understand how things work till the atomic level, and, based on my personal experience and the famous quote whose origin remains unknown 
+I'm always curious about how things work, right down to the smallest details. There's a saying I like:
 
-> "If you cant explain it to a child, then you haven't understood it yourself"
+> "If you can't explain it to a child, then you haven't understood it yourself."
 
-I have come to reliase that the best way to test one's knowledge on any topic is by teaching. Teaching something in a simple and clear way so that everyone undertstands is a test of how well that person know's his stuff. This is the rationale for starting this blog. As I learn new topics, I want to explain it well enough through my blogs.
+I believe the best way to test your knowledge is by teaching it to others. If you can explain something simply, you really understand it. That's why I started this blog. As I learn new things, I want to explain them clearly here.
 
-I have decided to take top-to-bottom approach. I will start from deep learning and go all the way down till transistors, understanding how everything works and explaining it as I learn in my blogs.
+I'll be taking a top-to-bottom approach, starting with deep learning and working my way down to transistors. Follow along on my blog to see what I discover.
 
 Check out my [blog](https://navneetkanna.github.io/blog/).
