@@ -1,6 +1,11 @@
 <footer class="site-footer h-card">
 
   <style>
+    .footer-col-2 {
+      width: -webkit-calc(20% - (30px / 2));
+      width: -webkit-max-content;
+    }
+
     .social-media-list {
       display: flex;
       list-style: none;
@@ -9,27 +14,21 @@
     }
 
     .social-media-list li {
-      margin: 0 20px;
+      margin-right: 20px;
     }
 
-    .social-media-list li+li {
-      padding-top: 0px;
-    }
-
-    #insta {
-      text-wrap: nowrap;
-    }
-
+    #insta,
     #github {
-      text-wrap: nowrap;
+      white-space: nowrap;
+      padding: 0px;
     }
 
     img {
-      max-width: 100%;
-      vertical-align: middle;
       padding-right: 5px;
+      padding-bottom: 2px;
     }
   </style>
+
   <data class="u-url" href="{{ " /" | relative_url }}"></data>
 
   <div class="wrapper">

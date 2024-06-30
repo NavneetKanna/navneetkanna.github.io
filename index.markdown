@@ -7,7 +7,7 @@ layout: home
 
 **TL;DR: Learn how everything works from machine learning down to transistors.**
 
-Hi, I'm VS Navneet Kanna. I'm 25 years old and work as a Software and Machine Learning Engineer. I love machine learning, coding, physics, and playing the piano (Baroque, Classical, and Romantic music). I have a master's degree in Robotics and AI from the University of Glasgow and currently work at a startup.
+Hi, I'm VS Navneet Kanna. I'm 24 years old and work as a Software and Machine Learning Engineer. I love machine learning, coding, physics, and playing the piano (Baroque, Classical, and Romantic music). I have a master's degree in Robotics and AI from the University of Glasgow and currently work at a startup.
 
 I'm always curious about how things work, right down to the smallest details. There's a saying I like:
 
