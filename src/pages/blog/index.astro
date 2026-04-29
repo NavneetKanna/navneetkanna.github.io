@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+// Using Vite's native glob importer
+const posts = Object.values(import.meta.glob('./*.md', { eager: true }));
+
+// Sort them by date (newest first)
+posts.sort((a, b) => new Date(b.frontmatter.date).valueOf() - new Date(a.frontmatter.date).valueOf());
+---
+
+<BaseLayout>
+    <main class="container" style="padding-top: 8rem; padding-bottom: 6rem; min-height: 100vh;">
+        <a href="/" style="font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 2rem; display: inline-block;">&larr; Back to Home</a>
+        
+        <h1 style="font-family: var(--font-display); font-size: 2.5rem; font-weight: 800; color: var(--text-strong); margin-bottom: 2.5rem;">
+            Technical Blog
+        </h1>
+        
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            {posts.map((post) => (
+                <a href={post.url} class="writing-link reveal visible">
+                    <div>
+                        <div class="writing-title">{post.frontmatter.title}</div>
+                        <div class="writing-sub" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); margin-top: 0.3rem;">
+                            {new Date(post.frontmatter.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                        </div>
+                    </div>
+                    <span class="writing-arrow">&rarr;</span>
+                </a>
+            ))}
+        </div>
+    </main>
+</BaseLayout>

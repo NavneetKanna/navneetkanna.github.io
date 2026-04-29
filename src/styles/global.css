@@ -1,0 +1,650 @@
+/* ── CSS Custom Properties ────────────────────────────────── */
+:root {
+    --bg:            #080808;
+    --bg-surface:    #101010;
+    --bg-card:       #0d0d0d;
+    --border:        #1c1c1c;
+    --border-hover:  #2e2e2e;
+    --text:          #c8c8c8;
+    --text-muted:    #4a4a4a;
+    --text-strong:   #ededed;
+    --accent:        #4dffa0;
+    --accent-dim:    rgba(77, 255, 160, 0.06);
+    --accent-border: rgba(77, 255, 160, 0.18);
+    --nav-bg:        rgba(8, 8, 8, 0.88);
+
+    --font-mono:    'Space Mono', monospace;
+    --font-body:    'Lora', serif;
+    --font-display: 'Plus Jakarta Sans', sans-serif; /* Applied new font here */
+
+    --ease: 0.2s ease;
+    --r: 3px;
+}
+
+    [data-theme="light"] {
+        --bg:            #f4f1ec;
+        --bg-surface:    #eceae4;
+        --bg-card:       #e8e5de;
+        --border:        #d4d0c8;
+        --border-hover:  #b8b4ab;
+        --text:          #3c3a36;
+        --text-muted:    #8a8680;
+        --text-strong:   #18160f;
+        --accent:        #007a44;
+        --accent-dim:    rgba(0, 122, 68, 0.06);
+        --accent-border: rgba(0, 122, 68, 0.18);
+        --nav-bg:        rgba(244, 241, 236, 0.88);
+    }
+
+    /* ── Reset ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 64px;
+}
+
+/* Theme-switch transition.
+   When .theme-transition is on <html>, every element cross-fades
+   color/background/border for 250ms. Class is removed afterwards
+   so it doesn't slow down regular hover/scroll interactions. */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease,
+        fill 0.25s ease,
+        stroke 0.25s ease !important;
+}
+
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-size: 17px;
+        line-height: 1.75;
+        transition: background var(--ease), color var(--ease);
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+        color: var(--accent);
+        text-decoration: none;
+        transition: opacity var(--ease);
+    }
+    a:hover { opacity: 0.7; }
+
+    /* Inline monospace highlight — used for things like ls, stat(),
+       d_type in project bullets. Subtle background, no border. */
+    code {
+        font-family: var(--font-mono);
+        font-size: 0.88em;
+        background: var(--bg-surface);
+        padding: 0.08em 0.35em;
+        border-radius: 2px;
+        color: var(--text-strong);
+    }
+
+    /* ── Nav ─────────────────────────────────────────────────── */
+    nav {
+        position: fixed;
+        inset: 0 0 auto 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 2rem;
+        height: 56px;
+        background: var(--nav-bg);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border);
+        transition: background var(--ease), border-color var(--ease);
+    }
+
+    .nav-name {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--text-strong);
+        letter-spacing: 0.03em;
+    }
+    .nav-name span { color: var(--accent); }
+
+    .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 1.75rem;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 1.5rem;
+        list-style: none;
+    }
+
+    .nav-links a {
+        font-family: var(--font-display);
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        transition: color var(--ease);
+    }
+    .nav-links a:hover {
+        color: var(--accent);
+        opacity: 1;
+    }
+
+    #theme-toggle {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        width: 38px;
+        height: 21px;
+        position: relative;
+        cursor: pointer;
+        transition: border-color var(--ease);
+        flex-shrink: 0;
+    }
+    #theme-toggle:hover { border-color: var(--accent); }
+    #theme-toggle::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: var(--text-muted);
+        transition: transform 0.3s ease, background 0.3s ease;
+    }
+    [data-theme="light"] #theme-toggle::after {
+        transform: translateX(17px);
+        background: var(--accent);
+    }
+
+    /* ── Layout ──────────────────────────────────────────────── */
+    .container {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    section {
+        padding: 5.5rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+    section:last-of-type { border-bottom: none; }
+
+    .section-label {
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 2.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .section-label::after {
+        content: '';
+        width: 48px;
+        height: 1px;
+        background: var(--border);
+    }
+
+    /* ── Hero ──────────────────────────────────────── */
+    /* Half-height hero. About section now starts at the 50% mark
+       so it's visible without scrolling on most screens. */
+    #hero {
+        min-height: 50vh;
+        display: flex;
+        align-items: center;
+        padding: 0;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-inner {
+        position: relative;
+        padding: 5rem 2rem 3.5rem;
+        max-width: 860px;
+        margin: 0 auto;
+        width: 100%;
+        z-index: 10;
+    }
+
+    .hero-pre {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        color: var(--accent);
+        letter-spacing: 0.06em;
+        margin-bottom: 2rem;
+    }
+
+    .hero-name {
+        font-family: var(--font-display);
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800;
+        line-height: 1.1; /* Fixed line-height so bottom of 'g' doesn't cut off */
+        letter-spacing: -0.03em;
+        color: var(--text-strong);
+        margin-bottom: 0.5rem;
+    }
+
+    .hero-tagline {
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: clamp(1.2rem, 2.6vw, 1.55rem);
+        color: var(--text-strong);
+        line-height: 1.5;
+        margin-bottom: 2.5rem;
+        max-width: 700px;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        padding: 0.55rem 1rem;
+        border-radius: var(--r);
+        border: 1px solid var(--border);
+        color: var(--text);
+        background: var(--bg-surface);
+        transition: border-color var(--ease), color var(--ease), background var(--ease);
+        cursor: pointer;
+    }
+    .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-dim);
+        opacity: 1;
+    }
+    .btn-accent {
+        border-color: var(--accent-border);
+        color: var(--accent);
+        background: var(--accent-dim);
+    }
+
+    /* ── About ─────────────────────────────────────────────── */
+    .about-list {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+    .about-list li {
+        position: relative;
+        padding-left: 1.5rem;
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: var(--text);
+    }
+    .about-list li::before {
+        content: '▹';
+        position: absolute;
+        left: 0;
+        top: 2px;
+        color: var(--accent);
+        font-size: 1.1rem;
+    }
+    .about-list strong {
+        color: var(--text-strong);
+        font-weight: 600;
+    }
+
+    /* ── Projects ────────────────────────────────────────────── */
+    .projects-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        overflow: hidden;
+    }
+
+    .project-card {
+        padding: 1.6rem 1.75rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-card);
+        transition: background var(--ease);
+        position: relative;
+    }
+    .project-card:last-child { border-bottom: none; }
+    .project-card:hover { background: var(--bg-surface); }
+
+    .project-card.featured::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 2px;
+        background: var(--accent);
+    }
+
+    .project-top {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.65rem;
+        flex-wrap: wrap;
+    }
+
+    .project-name {
+        font-family: var(--font-mono);
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-strong);
+    }
+    .project-card.featured .project-name { color: var(--accent); }
+
+    .project-desc {
+        font-size: 1rem;
+        color: var(--text);
+        line-height: 1.75;
+        margin-bottom: 0.9rem;
+    }
+
+    /* Bulleted detail list inside a project card. Same dot-style
+       bullets as the About section, slightly tighter spacing. */
+    .project-bullets {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 0.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+    }
+    .project-bullets li {
+        position: relative;
+        padding-left: 1.25rem;
+        font-size: 0.98rem;
+        line-height: 1.65;
+        color: var(--text);
+    }
+    .project-bullets li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.7rem;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.7;
+    }
+    .project-meta {
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+    }
+
+    .project-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    /* ── Publication ─────────────────────────────────────────── */
+    .pub-card {
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        padding: 1.75rem;
+        background: var(--bg-card);
+        transition: border-color var(--ease);
+    }
+    .pub-card:hover { border-color: var(--border-hover); }
+
+    .pub-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .pub-venue {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+    }
+
+    .pub-title {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-strong);
+        line-height: 1.35;
+        margin-bottom: 0.5rem;
+    }
+
+    .pub-authors {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+    .pub-authors strong {
+        color: var(--text);
+        font-style: normal;
+        font-weight: 500;
+    }
+
+    .pub-link-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        align-items: flex-end;
+        flex-shrink: 0;
+    }
+
+    .pub-meta-row {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .pub-meta-item {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        letter-spacing: 0.04em;
+    }
+
+    /* ── Contact ─────────────────────────────────────────────── */
+    .contact-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: start;
+    }
+
+    .contact-heading {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-strong);
+        letter-spacing: -0.02em;
+        margin-bottom: 0.75rem;
+    }
+    .contact-body {
+        font-size: 1.05rem;
+        color: var(--text-muted);
+        line-height: 1.8;
+        margin-bottom: 1.25rem;
+    }
+    .contact-email {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        color: var(--accent);
+    }
+
+    .socials {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .social-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.65rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        background: var(--bg-card);
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--text);
+        text-decoration: none;
+        transition: border-color var(--ease), color var(--ease), background var(--ease);
+        letter-spacing: 0.04em;
+    }
+    .social-link:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-dim);
+        opacity: 1;
+    }
+    .social-link svg {
+        width: 15px;
+        height: 15px;
+        fill: currentColor;
+        flex-shrink: 0;
+        opacity: 0.7;
+    }
+    .social-link:hover svg { opacity: 1; }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    footer {
+        padding: 2rem;
+        text-align: center;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        letter-spacing: 0.06em;
+    }
+
+    /* ── Animations ──────────────────────────────────────────── */
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+        opacity: 0;
+        transform: translateY(18px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    .reveal-stagger > * {
+        opacity: 0;
+        transform: translateY(14px);
+        transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+    .reveal-stagger.visible > *:nth-child(1) { opacity: 1; transform: none; transition-delay: 0.1s; }
+    .reveal-stagger.visible > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.2s; }
+    .reveal-stagger.visible > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.3s; }
+    .reveal-stagger.visible > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.4s; }
+
+    /* ── Mobile ──────────────────────────────────────────────── */
+    @media (max-width: 680px) {
+        nav { padding: 0 1.25rem; }
+        .nav-links { display: none; }
+        .hero-inner { padding: 7rem 1.25rem 4.5rem; }
+        .container { padding: 0 1.25rem; }
+        section { padding: 3.75rem 0; }
+        .pub-top { flex-direction: column; }
+        .pub-link-group { flex-direction: row; }
+        .contact-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+        .socials { flex-direction: row; flex-wrap: wrap; }
+    }
+
+
+    /* ── Blog Post Styling ───────────────────────────────────── */
+.blog-content h2, .blog-content h3 {
+    font-family: var(--font-display);
+    color: var(--text-strong);
+    margin: 2.5rem 0 1rem;
+}
+.blog-content p, .blog-content li {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+}
+.blog-content pre {
+    padding: 1.25rem;
+    border-radius: var(--r);
+    border: 1px solid var(--border);
+    margin-bottom: 2rem;
+    font-size: 0.85rem;
+    overflow-x: auto;
+}
+.blog-content code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--bg-surface);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+}
+.blog-content pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+.blog-content img {
+    max-width: 100%;
+    border-radius: var(--r);
+    border: 1px solid var(--border);
+    margin: 2rem auto;
+    display: block;
+}
+.blog-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+}
+.blog-content th, .blog-content td {
+    border: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+.blog-content th { background: var(--bg-surface); color: var(--text-strong); }
+
+/* Indent lists so numbers align with paragraphs */
+.blog-content ul,
+.blog-content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Make the spacing between list items slightly tighter than paragraphs */
+.blog-content li {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    margin-bottom: 0.5rem;
+}
+
+

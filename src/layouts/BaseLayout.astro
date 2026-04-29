@@ -1,0 +1,63 @@
+---
+import '../styles/global.css';
+---
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VS Navneet Kanna — ML Engineer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+</head>
+<body>
+    <nav>
+        <span class="nav-name"><a href="/" style="color: inherit;">navneet<span>kanna</span></a></span>
+        <div class="nav-right">
+            <ul class="nav-links">
+    <li><a href="/#about">About</a></li>
+    <li><a href="/#projects">Projects</a></li>
+    <li><a href="/#publication">Research</a></li>
+    <li><a href="/blog">Writing</a></li> 
+
+    </ul>
+            <button id="theme-toggle" aria-label="Toggle theme"></button>
+        </div>
+    </nav>
+
+    <slot />
+
+    <footer>
+        <p>&copy; 2026 VS Navneet Kanna</p>
+    </footer>
+
+    <script is:inline>
+        const root = document.documentElement;
+        const toggle = document.getElementById('theme-toggle');
+        const saved = localStorage.getItem('theme');
+        if (saved) root.setAttribute('data-theme', saved);
+
+        toggle.addEventListener('click', () => {
+            const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        });
+
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    io.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => io.observe(el));
+        setTimeout(() => {
+            document.querySelectorAll('#hero .reveal-stagger, #about .reveal-stagger, #about .reveal').forEach(el => el.classList.add('visible'));
+        }, 50);
+    </script>
+</body>
+</html>
