@@ -4,7 +4,7 @@ title: "Writing FlashAttention in Triton (Part 1): The Memory Wall and the Onlin
 date: 2026-05-26
 ---
 
-Before we dive into this, it is important that you have understood the attention mechanism first, you can read my [blog anout it](https://navneetkanna.com/blog/transformers1/).
+Before we dive into this, it is important that you have understood the attention mechanism first, you can read my [blog about it](https://navneetkanna.com/blog/transformers1/).
 
 
 ### Softmax
@@ -46,3 +46,12 @@ First lets clear up on some jargon:
 
 1. SRAM (Static RAM) - is the fastest memory in the hierarchy, it is built directly onto the SM die.
 2. VRAM (Video RAM) or HBM (High Bandwidth Memory) - this is the value that `nvidia-smi` shows. It's stacked DRAM dies right next to the GPU die, giving very short, wide interconnects.
+
+Now, the main speedup that comes when using flash attention is when we avoid all the intermediary memory transfers between the HBM and the SM when processing attention. So lets see the navie attention
+mechanism and the memory transfers it requires:
+
+$$
+
+S = Q K^T \over \sqrt{d}
+
+$$
