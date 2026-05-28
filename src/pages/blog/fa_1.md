@@ -59,12 +59,12 @@ Y = softmax(X) \\[1em]
 O = Y V
 $$
 
-1. First, the $Q$ and the $K$ are loaded from the HBM and $X$ computed. After the computation, $X$ is written back to HBM.
-2. Now, $X$ is loaded back again from the HBM and softmax computed after which $Y$ is witten back to the HBM.
+1. First, $Q$ and $K$ are loaded from the HBM and $X$ is computed. After the computation, $X$ is written back to HBM.
+2. Now, $X$ is loaded back again from the HBM and softmax is computed after which $Y$ is witten back to the HBM.
 3. Again, $Y$ is loaded back from HBM as well as $V$ and $O$ is computed and written back to HBM.
 
 
-As it can be seen, there are too many unnecessary reads and writes which slows down the process. And you can imagine it for huge mattices, multiple heads, multiple blocks these reads and writes affects the
-speed.
+As it can be seen, there are too many unnecessary reads and writes which slows down the process. And you can imagine it for huge matrices, multiple heads, multiple blocks these reads and writes affects the
+overall speed.
 
 
