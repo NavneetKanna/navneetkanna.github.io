@@ -27,16 +27,11 @@ $$
 \end{bmatrix}
 $$
 
-Now we sum each row
-
-$$
-Row 1 sum: 11.21
-Row 2 sum: 24.43
-$$
+Now we sum each row `Row 1 sum: 11.21` and `Row 2 sum: 24.43`.
 
 Next we have to divide each exponent by its row sum to get probabilities
 
-$
+$$
 \begin{bmatrix}
 0.65 & 0.24 & 0.04 \\
 0.11 & 0.82 & 0.06
