@@ -38,4 +38,11 @@ $$
 \end{bmatrix}
 $$
 
-Notice how the highest score in each row (2.0 in the first row, 3.0 in the second) becomes the highest probability (0.659 and 0.821). The sum of each row is exactly 1.
+Notice how the highest score in each row (2.0 in the first row, 3.0 in the second) becomes the highest probability (0.65 and 0.82). The sum of each row is exactly 1.
+
+## Flash Attention
+
+First lets clear up on some jargon:
+
+1. SRAM (Static RAM) - is the fastest memory in the hierarchy, it is built directly onto the SM die.
+2. VRAM (Video RAM) or HBM (High Bandwidth Memory) - this is the value that `nvidia-smi` shows. It's stacked DRAM dies right next to the GPU die, giving very short, wide interconnects.
