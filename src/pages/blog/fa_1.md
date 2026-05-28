@@ -52,9 +52,9 @@ mechanism and the memory transfers it requires:
 
 $$
 
-S = { Q K^T \over \sqrt{d} }
+S = { Q K^T \over \sqrt{d} } \\
 
-P = softmax(S)
+P = softmax(S) \\
 
 O = P V
 $$
