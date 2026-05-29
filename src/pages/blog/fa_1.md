@@ -67,4 +67,6 @@ $$
 As it can be seen, there are too many unnecessary reads and writes which slows down the process. And you can imagine it for huge matrices, multiple heads, multiple blocks these reads and writes affects the
 overall speed.
 
-The way flash attention solves this is by tiling and fusing these two steps into 1: $Y = softmax(X)$ and $O = Y V$.
+The way flash attention solves this is by tiling and fusing these two steps into one
+
+$$Y = softmax(X)$ and $O = Y V$$
