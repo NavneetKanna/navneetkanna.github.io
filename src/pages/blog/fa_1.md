@@ -69,4 +69,7 @@ overall speed.
 
 The way flash attention solves this is by tiling and fusing these two steps into one
 
-$$Y = softmax(X)$ and $O = Y V$$
+$$
+Y = softmax(X) \\[1em]
+O = Y V
+$$
