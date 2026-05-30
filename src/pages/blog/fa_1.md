@@ -97,17 +97,19 @@ The trick here is the correction factor $e^{m_{i-1} - m_i}$. Whenever we hit a n
 so it acts as if we had known the new global maximum from the very beginning.
 
 Pass 1: Streaming the Tiles
+
 Processing Tile 1: [1, 2]. Load [1, 2] from VRAM into registers/SRAM.
   - Local Max: $m_{local} = \max(1, 2) = 2$
   - New Global Max: $m_{new} = \max(-\infty, 2) = \mathbf{2}$
-  - Local Denom: $d_{local} = e^{1 - 2} + e^{2 - 2} = e^{-1} + 1 \approx 0.367 + 1 = 1.367$
-  - New Global Denom: $d_{new} = 0 \cdot e^{-\infty - 2} + 1.367 = \mathbf{1.367}$
+  - Local Denominator: $d_{local} = e^{1 - 2} + e^{2 - 2} = e^{-1} + 1 \approx 0.367 + 1 = 1.367$
+  - New Global Denominator: $d_{new} = 0 \cdot e^{-\infty - 2} + 1.367 = \mathbf{1.367}$
   - Current State: $m = 2, d = 1.367$
+
 Processing Tile 2: [3, 4]. Load [3, 4] into registers.
   - Local Max: $m_{local} = \max(3, 4) = 4$
   - New Global Max: $m_{new} = \max(2, 4) = \mathbf{4}$
-  - Local Denom: $d_{local} = e^{3 - 4} + e^{4 - 4} = e^{-1} + 1 \approx \mathbf{1.367}$
-  - New Global Denom: Here is where the magic happens. We scale the old denom ($1.367$) by the difference between the old max ($2$) and the new max ($4$).
+  - Local Denominator: $d_{local} = e^{3 - 4} + e^{4 - 4} = e^{-1} + 1 \approx \mathbf{1.367}$
+  - New Global Denominator: Here is where the magic happens. We scale the old denom ($1.367$) by the difference between the old max ($2$) and the new max ($4$).
 
 $$
 d_{new} = 1.367 \cdot e^{2 - 4} + 1.367 \\[1em]
@@ -119,6 +121,7 @@ Final Output State: $m = 4, d = 1.552$. $1.552$ is the exact same global denomin
 final answer.
 
 Pass 2: Computing the Probabilities
+
 Now that we have our true global max ($4$) and global denom ($1.552$), we do our second pass over the tiles to compute and write the final probabilities.
   - Load Tile 1 [1, 2]: Compute $(e^{1-4}/1.552)$ and $(e^{2-4}/1.552)$. Write [0.03, 0.09] to VRAM.
   - Load Tile 2 [3, 4]: Compute $(e^{3-4}/1.552)$ and $(e^{4-4}/1.552)$. Write [0.24, 0.64] to VRAM.
