@@ -76,7 +76,9 @@ $$
 
 First we need to understand a variant of softmax called online/streaming softmax.
 
-Lets take 1 row of a matrix $[1, 2, 3, 4]$ with tile size 2. The way this works is:
+### Streaming Softmax
+
+The main idea is to do softmax in tiles. The way this works is:
 
 There are 2 variables that are initialized: $m_{old} = -inf$ and $d_{old} = 0$, where $m$ is the running maximum and $d$ the running denominator. For each element, we update the state using 
 
@@ -105,16 +107,34 @@ $$
 The trick here is the correction factor $e^{m_{i-1} - m_i}$. Whenever we hit a new maximum value, this factor scales down the previously accumulated denominator. It mathematically adjusts the old sum
 so it acts as if we had known the new global maximum from the very beginning.
 
+Lets take 1 row of a matrix $[1, 2, 3, 4]$ with tile size 2. 
+
+Lets see how its done normally
+
+Pass 1: Find the max of the full row
+  - Load all the values from VRAM and calculate the max.
+
+Pass 2: Compute Exponentials & Sum
+  - Load the values again from VRAM and calculate the exponentials and the sum of it.
+  - After calculating the exponentials we need to store them back to VRAM.
+
+Pass 3: Final Division
+  - Now we need to load those exponentials from VRAM and divide by the row sum.
+
+Now lets see how it is done in streaming version
+
 Pass 1: Streaming the Tiles
 
-Processing Tile 1: [1, 2]. Load [1, 2] from VRAM into registers/SRAM.
+Processing Tile 1: [1, 2].
+  - Load [1, 2] from VRAM into registers/SRAM.
   - Local Max: $m_{local} = \max(1, 2) = 2$
   - New Global Max: $m_{new} = \max(-\infty, 2) = \mathbf{2}$
   - Local Denominator: $d_{local} = e^{1 - 2} + e^{2 - 2} = e^{-1} + 1 \approx 0.367 + 1 = 1.367$
   - New Global Denominator: $d_{new} = 0 \cdot e^{-\infty - 2} + 1.367 = \mathbf{1.367}$
   - Current State: $m = 2, d = 1.367$
 
-Processing Tile 2: [3, 4]. Load [3, 4] into registers.
+Processing Tile 2: [3, 4].
+  - Load [3, 4] into registers.
   - Local Max: $m_{local} = \max(3, 4) = 4$
   - New Global Max: $m_{new} = \max(2, 4) = \mathbf{4}$
   - Local Denominator: $d_{local} = e^{3 - 4} + e^{4 - 4} = e^{-1} + 1 \approx \mathbf{1.367}$
