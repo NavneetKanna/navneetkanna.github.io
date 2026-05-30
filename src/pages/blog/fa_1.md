@@ -73,3 +73,18 @@ $$
 Y = softmax(X) \\[1em]
 O = Y V
 $$
+
+First we need to understand a variant of softmax called online/streaming softmax.
+
+Lets take 1 row of a matrix $[1, 2, 3, 4]$ with tile size 2. The way this works is:
+
+There are 2 variables that are initialized: $m_{old} = -inf$ and $d_{old} = 0$, where $m$ is the running maximum and $d$ the running denominator. For each element, we update the state using 
+
+$$
+m_i = max(m_{i-1}, x_i) \\[1em\
+
+d_i = d_{i-1} e^{m_{i-1}-m_i} + e^{x_i - m_i}
+$$
+
+1. Load $[1, 2]$ from VRAM into fast registers/SRAM.
+  - 
