@@ -129,9 +129,9 @@ $$
 
 where $S_{local} = Q \times K_{local}^T$.
 
-Lets see how it works with the same example, but this time we need the value matrix and .
+Lets see how it works with the same example, but this time we need the value matrix and $S$.
 
-$S$: [2, 3, 5, 4]
+$S$: [2, 3, 5, 4] \\[1em]
 $V$: [10, 20, 30, 40]
 
 
@@ -139,7 +139,12 @@ Pass 1: Tile 1
 
 Load the first block from VRAM into fast memory: $S = [2, 3]$ and $V = [10, 20]$.
 
-1. Find New Max: $m_{local} = 3$$m_{new} = \max(-\infty, 3) = \mathbf{3}$
+1. Find New Max: $m_{local} = 3
+
+$$
+m_{new} = \max(-\infty, 3) = \mathbf{3}
+$$
+
 2. Update Denominator ($d$): 
 
 $$
@@ -169,7 +174,7 @@ m_{local} = 5 \\[1em]
 m_{new} = \max(3, 5) = \mathbf{5}
 $$
 
-Because the global max just changed from $3$ to $5$, we need to calculate our mathematical correction factor: $e^{3 - 5} = e^{-2} \approx \mathbf{0.135}$.
+Because the global max just changed from $3$ to $5$, we need to calculate our correction factor: $e^{3 - 5} = e^{-2} \approx \mathbf{0.135}$.
 
 2. Update Denominator ($d$):
 
