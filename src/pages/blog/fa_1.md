@@ -126,3 +126,79 @@ We scale the old $O$ matrix down, and then add the new block's contribution:
 $$
 O_{new} = O_{old} \cdot e^{m_{old} - m_{new}} + (e^{S_{local} - m_{new}} \times V_{local})
 $$
+
+where $S_{local} = Q \times K_{local}^T$.
+
+Lets see how it works with the same example, but this time we need the value matrix and .
+
+$S$: [2, 3, 5, 4]
+$V$: [10, 20, 30, 40]
+
+
+Pass 1: Tile 1
+
+Load the first block from VRAM into fast memory: $S = [2, 3]$ and $V = [10, 20]$.
+
+1. Find New Max: $m_{local} = 3$$m_{new} = \max(-\infty, 3) = \mathbf{3}$
+2. Update Denominator ($d$): 
+
+$$
+d_{new} = d_{old} \cdot e^{-\infty - 3} + (e^{2-3} + e^{3-3}) \\[1em]
+d_{new} = 0 + (e^{-1} + 1) \\[1em]
+d_{new} \approx 0.368 + 1 = \mathbf{1.368}
+$$
+
+3. Update Output Accumulator ($O$): Instead of dividing by $d$, we just multiply the exponentials directly against the Values.
+
+$$
+O_{new} = O_{old} \cdot e^{-\infty - 3} + (e^{2-3} \cdot 10 + e^{3-3} \cdot 20) \\[1em]
+O_{new} = 0 + (0.368 \cdot 10 + 1 \cdot 20) \\[1em]
+O_{new} = 3.68 + 20 = \mathbf{23.68}
+$$
+
+Tile 1 is done. It gets dumped from SRAM. Current hardware state: $m = 3, d = 1.368, O = 23.68$.
+
+Pass 2: Tile 2
+
+Load the next block: $S = [5, 4]$ and $V = [30, 40]$.
+
+1. Find New Max:
+
+$$
+m_{local} = 5 \\[1em]
+m_{new} = \max(3, 5) = \mathbf{5}
+$$
+
+Because the global max just changed from $3$ to $5$, we need to calculate our mathematical correction factor: $e^{3 - 5} = e^{-2} \approx \mathbf{0.135}$.
+
+2. Update Denominator ($d$):
+
+We apply the correction factor to fix the old denominator, then add the new tile's sum.
+
+$$
+d_{new} = (d_{old} \cdot 0.135) + (e^{5-5} + e^{4-5}) \\[1em]
+d_{new} = (1.368 \cdot 0.135) + (1 + 0.368) \\[1em]
+d_{new} = 0.185 + 1.368 = \mathbf{1.553}
+$$
+
+3. Update Output Accumulator ($O$):
+
+We apply the exact same correction factor to fix our running $O$ matrix, then add the new tile's unnormalized matrix multiplication.
+
+$$
+O_{new} = (O_{old} \cdot 0.135) + (e^{5-5} \cdot 30 + e^{4-5} \cdot 40) \\[1em]
+O_{new} = (23.68 \cdot 0.135) + (1 \cdot 30 + 0.368 \cdot 40) \\[1em]
+O_{new} = 3.20 + (30 + 14.72) \\[1em]
+O_{new} = 3.20 + 44.72 = \mathbf{47.92}
+$$
+
+Tile 2 is done. We have reached the end of the sequence. Final hardware state: $m = 5, d = 1.553, O = 47.92$.
+
+The Final Division
+
+We streamed through the entire sequence without ever writing a single intermediate probability or exponential to main memory. We just maintained three variables in our fast registers.
+To get the final, true attention output, we do one division right before we write to VRAM:
+
+$$
+\text{Final Output} = \frac{O}{d} = \frac{47.92}{1.553} = \mathbf{30.86}
+$$
