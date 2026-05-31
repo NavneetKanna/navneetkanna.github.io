@@ -13,7 +13,7 @@ First lets clear up on some jargon:
 1. SRAM (Static RAM) - is the fastest memory in the hierarchy, it is built directly onto the SM die.
 2. VRAM (Video RAM) or HBM (High Bandwidth Memory) - this is the value that `nvidia-smi` shows. It's stacked DRAM dies right next to the GPU die, giving very short, wide interconnects.
 
-Now, the main speedup that comes when using flash attention is when we avoid all the intermediary memory transfers between the HBM and the SM when processing attention. So lets see the navie attention
+Now, the main speedup that comes when using flash attention is when we avoid all the intermediary memory transfers between the HBM and the SM when processing attention. So lets see the naive attention
 mechanism and the memory transfers it requires:
 
 $$
@@ -29,18 +29,13 @@ $$
 2. Now, $X$ is loaded back again from the HBM and softmax is computed after which $Y$ is written back to the HBM.
 3. Again, $Y$ is loaded back from HBM as well as $V$ and $O$ is computed and written back to HBM.
 
-
 As it can be seen, there are too many unnecessary reads and writes which slows down the process. And you can imagine it for huge matrices, multiple heads, multiple blocks these reads and writes affects the
 overall speed. The GPU's compute units can do arithmetic far faster than HBM can supply data. Naive attention is bottlenecked by bandwidth, not by the matmuls.
 
-The way flash attention solves this is by tiling and fusing these two steps into one
+For a sequence of length n, the S matrix alone requires $O(n^2)$ memory. At n = 8192 with fp16, that's ~134MB just for attention scores, per head, per layer. Flash Attention reduces memory to $O(n)$
+and more importantly, Q, K, and V are each read from HBM exactly once.
 
-$$
-Y = softmax(X) \\[1em]
-O = Y V
-$$
-
-First we need to understand a variant of softmax called online/streaming softmax.
+The way Flash Attention achieves this is by fusing the softmax and the output multiplication into a single pass. To understand how, we first need to look at streaming softmax.
 
 ### Streaming Softmax
 
@@ -64,7 +59,7 @@ $$
 d_{new} = d_{old} \cdot e^{m_{old} - m_{new}} + d_{local}
 $$
 
-The trick here is the correction factor $e^{m_old - m_new}$. Whenever we hit a new maximum value, this factor scales down the previously accumulated denominator. It mathematically adjusts the old sum
+The trick here is the correction factor $e^{m_{old} - m_{new}}$. Whenever we hit a new maximum value, this factor scales down the previously accumulated denominator. It mathematically adjusts the old sum
 so it acts as if we had known the new global maximum from the very beginning.
 
 Lets take 1 row of a matrix $[1, 2, 3, 4]$ with tile size 2. 
@@ -115,7 +110,7 @@ Now that we have our true global max ($4$) and global denominator ($1.552$), we 
   - Load Tile 1 [1, 2]: Compute $(e^{1-4}/1.552)$ and $(e^{2-4}/1.552)$. Write [0.03, 0.09] to VRAM.
   - Load Tile 2 [3, 4]: Compute $(e^{3-4}/1.552)$ and $(e^{4-4}/1.552)$. Write [0.24, 0.64] to VRAM.
 
-So far we have discussed streaming softmax, now lets see how flash attention incoporates it. Along with the two running variables, flash attention maintains one more, which is the output $O$ (this is the
+So far we have discussed streaming softmax, now lets see how flash attention incorporates it. Along with the two running variables, flash attention maintains one more, which is the output $O$ (this is the
 last step of the attention process, see above).
 
 Steps 1, 2 and 3 are the same. Now, there is an additional step
