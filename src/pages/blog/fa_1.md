@@ -124,7 +124,7 @@ The values in $O_{old}$ accumulator were multiplied by exponentials using the ol
 We scale the old $O$ matrix down, and then add the new block's contribution:
 
 $$
-O_{new} = O_{old} \cdot e^{m_{old} - m_{new}} + (e^{S_{local} - m_{new}} \dot V_{local})
+O_{new} = O_{old} \cdot e^{m_{old} - m_{new}} + \sum_{j \in \text{tile}} e^{S_j - m_{new}} \cdot V_j
 $$
 
 where $S_{local} = Q \times K_{local}^T$.
@@ -139,9 +139,10 @@ Tile 1
 
 Load the first block from VRAM into fast memory: $S = [2, 3]$ and $V = [10, 20]$.
 
-1. Find New Max: $m_{local} = 3
+1. Find New Max:
 
 $$
+m_{local} = 3 \\[1em]
 m_{new} = \max(-\infty, 3) = \mathbf{3}
 $$
 
