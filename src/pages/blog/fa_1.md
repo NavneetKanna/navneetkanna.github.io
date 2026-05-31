@@ -46,13 +46,7 @@ First we need to understand a variant of softmax called online/streaming softmax
 
 The main idea is to do softmax in tiles. The way this works is:
 
-There are 2 variables that are initialized: $m_{old} = -inf$ and $d_{old} = 0$, where $m$ is the running maximum and $d$ the running denominator. For each element, we update the state using 
-
-$$
-m_i = max(m_{i-1}, x_i) \\[1em]
-
-d_i = d_{i-1} e^{m_{i-1}-m_i} + e^{x_i - m_i}
-$$
+There are 2 variables that are initialized: $m_{old} = -inf$ and $d_{old} = 0$, where $m$ is the running maximum and $d$ the running denominator.
 
 More specifically
 
@@ -70,7 +64,7 @@ $$
 d_{new} = d_{old} \cdot e^{m_{old} - m_{new}} + d_{local}
 $$
 
-The trick here is the correction factor $e^{m_{i-1} - m_i}$. Whenever we hit a new maximum value, this factor scales down the previously accumulated denominator. It mathematically adjusts the old sum
+The trick here is the correction factor $e^{m_old - m_new}$. Whenever we hit a new maximum value, this factor scales down the previously accumulated denominator. It mathematically adjusts the old sum
 so it acts as if we had known the new global maximum from the very beginning.
 
 Lets take 1 row of a matrix $[1, 2, 3, 4]$ with tile size 2. 
@@ -121,3 +115,14 @@ Now that we have our true global max ($4$) and global denominator ($1.552$), we 
   - Load Tile 1 [1, 2]: Compute $(e^{1-4}/1.552)$ and $(e^{2-4}/1.552)$. Write [0.03, 0.09] to VRAM.
   - Load Tile 2 [3, 4]: Compute $(e^{3-4}/1.552)$ and $(e^{4-4}/1.552)$. Write [0.24, 0.64] to VRAM.
 
+So far we have discussed streaming softmax, now lets see how flash attention incoporates it. Along with the two running variables, flash attention maintains one more, which is the output $O$ (this is the
+last step of the attention process, see above).
+
+Steps 1, 2 and 3 are the same. Now, there is an additional step
+
+The values in $O_{old}$ accumulator were multiplied by exponentials using the old maximum. We can fix the entire matrix block of $O$ using the exact same scalar correction factor!
+We scale the old $O$ matrix down, and then add the new block's contribution:
+
+$$
+O_{new} = O_{old} \cdot e^{m_{old} - m_{new}} + (e^{S_{local} - m_{new}} \times V_{local})
+$$
