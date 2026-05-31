@@ -124,7 +124,7 @@ The values in $O_{old}$ accumulator were multiplied by exponentials using the ol
 We scale the old $O$ matrix down, and then add the new block's contribution:
 
 $$
-O_{new} = O_{old} \cdot e^{m_{old} - m_{new}} + (e^{S_{local} - m_{new}} \times V_{local})
+O_{new} = O_{old} \cdot e^{m_{old} - m_{new}} + (e^{S_{local} - m_{new}} \dot V_{local})
 $$
 
 where $S_{local} = Q \times K_{local}^T$.
@@ -135,7 +135,7 @@ $S$: [2, 3, 5, 4] \\[1em]
 $V$: [10, 20, 30, 40]
 
 
-Pass 1: Tile 1
+Tile 1
 
 Load the first block from VRAM into fast memory: $S = [2, 3]$ and $V = [10, 20]$.
 
@@ -163,7 +163,7 @@ $$
 
 Tile 1 is done. It gets dumped from SRAM. Current hardware state: $m = 3, d = 1.368, O = 23.68$.
 
-Pass 2: Tile 2
+Tile 2
 
 Load the next block: $S = [5, 4]$ and $V = [30, 40]$.
 
@@ -207,3 +207,6 @@ To get the final, true attention output, we do one division right before we writ
 $$
 \text{Final Output} = \frac{O}{d} = \frac{47.92}{1.553} = \mathbf{30.86}
 $$
+
+For a sequence of length n, the $S$ matrix alone requires $O(n^2)$ memory At n = 8192 and fp16, that's ~134MB just for attention scores, per head, per layer. Flash Attention reduces memory to O(n).
+We streamed through all tiles in a single pass: Q, K, and V are each read from HBM exactly once.
