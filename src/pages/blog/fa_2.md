@@ -342,7 +342,7 @@ My first run had the fused kernel using a $32\times 32$ block while the base ker
 2.49 ms for rotating outside. That looked like fusion stops paying off past some length. Setting both kernels to $64\times 64$ reversed the conclusion: **fused now wins at every length**, from 2.5x at $N=512$
 down to 1.06x at $N=8192$. The earlier long-sequence loss was mostly the $32\times 32$ tiles under utilizing the tensor cores, not the fusion.
 
-So the finding is that fusing RoPE is a consistent win, with a margin that *shrinks* as sequences grow (2.5x → 1.06x). That shrinking margin is the tradeoff we discussed. Fusing saves the launch overhead
+So the finding is that fusing RoPE is a consistent win, with a margin that *shrinks* as sequences grow (2.5x -> 1.06x). That shrinking margin is the tradeoff we discussed. Fusing saves the launch overhead
 The savings dominate throughout the low and mid range, but the growing rotation cost gets to them, which is why the speedup decays toward 1. Extrapolating, the lines might cross at some much larger $N$.
 
 A note on the columns: rotate-outside + SDPA changes *two* things relative to the fused kernel, where RoPE happens **and** the attention engine (FA2 vs ours). The clean comparison is the middle column,
