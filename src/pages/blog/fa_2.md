@@ -356,4 +356,4 @@ recheck. The fix took one line and reversed the conclusion.
 The forward pass now sits at ~88% of peak, so the next step is the **backward pass**, which is where most of the real difficulty (and most of the FLOPs) actually live. Beyond that: an `ncu` profile to
 confirm *why* the RoPE fusion margin decays with sequence length, the redundant K-rotation might be the suspect, and extending RoPE to long-context.
  
-The code for everything here is on [GitHub](https://github.com/NavneetKanna/flash-attention-triton). If you spot a bug in the kernel, I'd genuinely like to know.
+The code for everything here is on [GitHub](https://github.com/NavneetKanna/flash-attention-triton). If you spot a bug in the kernel, do let me know.
