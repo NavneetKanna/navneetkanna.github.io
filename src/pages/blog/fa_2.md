@@ -297,7 +297,7 @@ fp16 matters here sine SDPA only uses its FA2 backend in fp16/bf16.
 ![runtime vs sequence length](/assets/images/runtime_vs_seqlen.png)
 ![achieved TFLOP/s vs sequence length](/assets/images/tflops_vs_seqlen.png)
 
-### The Results
+### Interpreting The Results
 
 The kernel **matches FlashAttention-2 across the whole range** and is meaningfully ahead in the mid regime, 113 vs 91 TFLOP/s at $N=2048$, 133 vs 122 at $N=4096$ and stays a little ahead at the longest
 sequence (147 vs 141 at $N=8192$). I want to note something here: I have *not* beat pytorch FA2. It's that in this specific regime, forward pass only, fp16, on a single RTX 4090, a hand-written
@@ -307,3 +307,53 @@ Putting that ~145 TFLOP/s in context: the RTX 4090's fp16 tensor-core ceiling wi
 The naive baseline is flat near 5–8 TFLOP/s regardless of length, because it's bandwidth-bound: it writes and re-reads the full $N\times N$ score matrix from HBM, exactly the $O(N^2)$ memory trap Part 1
 discussed about. It's also the only implementation whose memory grows quadratically.
 
+### One optimisation: the causal early-stop
+
+The single change that really showed improvement was the causal early-stop discussed earlier, only looping over K blocks up to the query block's own diagonal. It's worth quantifying,. Here is the kernel's
+achieved TFLOP/s with and without it, same config:
+
+| seq_len | without early-stop | with early-stop |
+|---|---|---|
+| 512   | 45.6 | 45.6  |
+| 1024  | 63.6 | 79.1  |
+| 2048  | 74.9 | 113.4 |
+| 4096  | 78.3 | 133.2 |
+| 8192  | 78.8 | 144.6 |
+
+Without it the kernel plateaus around 78 TFLOP/s; with it, throughput nearly doubles at long sequences (79 -> 145 at $N=8192$). The reason being causal means half the work: without the early-stop,
+every query block still computes scores for the future K blocks and *then* masks them to $-\infty$, roughly half the matmul work, thrown away. The effect is negligible at $N=512$
+(the first query blocks have little future to skip) and grows with sequence length, which is precisely the shape of the gap above.
+
+### Does fusing RoPE actually help?
+
+Three ways to get RoPE + causal attention, fp16, same config:
+
+| seq_len | rotate-outside + SDPA | rotate-outside + our kernel | fused (our kernel) |
+|---|---|---|---|
+| 512   | 0.073 | 0.071 | **0.028** |
+| 1024  | 0.137 | 0.126 | **0.062** |
+| 2048  | 0.285 | 0.260 | **0.179** |
+| 4096  | 0.770 | 0.731 | **0.623** |
+| 8192  | 2.554 | 2.486 | **2.344** |
+
+![RoPE: fused vs rotate-outside](/assets/images/rope_runtime_vs_seqlen.png)
+
+My first run had the fused kernel using a $32\times 32$ block while the base kernel used $64\times 64$, and it showed fusion *losing* at long sequences, at $N=8192$ the fused kernel took 3.19 ms versus
+2.49 ms for rotating outside. That looked like fusion stops paying off past some length. Setting both kernels to $64\times 64$ reversed the conclusion: **fused now wins at every length**, from 2.5x at $N=512$
+down to 1.06x at $N=8192$. The earlier long-sequence loss was mostly the $32\times 32$ tiles under utilizing the tensor cores, not the fusion.
+
+So the finding is that fusing RoPE is a consistent win, with a margin that *shrinks* as sequences grow (2.5x → 1.06x). That shrinking margin is the tradeoff we discussed. Fusing saves the launch overhead
+The savings dominate throughout the low and mid range, but the growing rotation cost gets to them, which is why the speedup decays toward 1. Extrapolating, the lines might cross at some much larger $N$.
+
+A note on the columns: rotate-outside + SDPA changes *two* things relative to the fused kernel, where RoPE happens **and** the attention engine (FA2 vs ours). The clean comparison is the middle column,
+rotate-outside + our kernel, which holds the attention engine fixed and varies only where the rotation happens.
+
+The first version looked completely fine. fusion stops paying off past 2K. I'd have believed it. The only reason I didn't is that the two kernels happened to differ in a second way, and that made me to
+recheck. The fix took one line and reversed the conclusion.
+
+## What's next
+ 
+The forward pass now sits at ~88% of peak, so the next step is the **backward pass**, which is where most of the real difficulty (and most of the FLOPs) actually live. Beyond that: an `ncu` profile to
+confirm *why* the RoPE fusion margin decays with sequence length, the redundant K-rotation might be the suspect, and extending RoPE to long-context.
+ 
+The code for everything here is on [GitHub](https://github.com/NavneetKanna/flash-attention-triton). If you spot a bug in the kernel, I'd genuinely like to know.
