@@ -55,7 +55,7 @@ for start_kv in range(0, N, BLOCK_KV):
     k = tl.load(k_block_ptr, boundary_check=(0, 1))   # (BLOCK_D, BLOCK_KV), transposed
     v = tl.load(v_block_ptr, boundary_check=(0, 1))   # (BLOCK_KV, BLOCK_D)
 
-    qk = tl.dot(q, k) * qk_scale                      # S = Q K.T / sqrt(d)  (one tile)
+    qk = tl.dot(q, k) * qk_scale                      # S = Q @ K.T / sqrt(d)  (one tile)
 
     # causal mask
     qk = tl.where(q_idx[:, None] >= k_idx[None, :], qk, float("-inf"))
@@ -65,9 +65,9 @@ for start_kv in range(0, N, BLOCK_KV):
     alpha = tl.math.exp2(mi - new_mi)                 # correction factor
     p = tl.math.exp2(qk - new_mi[:, None])            # unnormalised probs
 
-    o_acc = o_acc * alpha[:, None] + tl.dot(p, v)     # O_new = O_old . alpha + P @ V
+    o_acc = o_acc * alpha[:, None] + tl.dot(p, v)     # O_new = O_old * alpha + P @ V
     mi = new_mi
-    li = li * alpha + tl.sum(p, axis=1)               # d_new = d_old . alpha + d_local
+    li = li * alpha + tl.sum(p, axis=1)               # d_new = d_old * alpha + d_local
 
     k_block_ptr = tl.advance(k_block_ptr, (0, BLOCK_KV))
     v_block_ptr = tl.advance(v_block_ptr, (BLOCK_KV, 0))
@@ -75,8 +75,48 @@ for start_kv in range(0, N, BLOCK_KV):
 o_acc = o_acc / li[:, None]                            # the single final division
 ```
 
-Line for line, this is Part 1: `mi` is $m$, `li` is $d$, `o_acc` is $O$, and `alpha` is the correction factor $e^{m_\text{old}-m_\text{new}}$ that rescales the running state whenever a new maximum appears. The only thing we never do is materialise the full $N\times N$ score matrix — each `qk` tile lives in SRAM and is discarded after it updates the three running variables.
+Line for line, this is Part 1: `mi` is $m$, `li` is $d$, `o_acc` is $O$, and `alpha` is the correction factor $e^{m_\text{old}-m_\text{new}}$ that rescales the running state whenever a new maximum appears. The only thing we never do is materialise the full $N\times N$ score matrix, each `qk` tile lives in SRAM and is discarded after it updates the three running variables.
 
 One subtlety: `K` is loaded **transposed** (block shape `(BLOCK_D, BLOCK_KV)`), so that `tl.dot(q, k)` directly computes $Q K^\top$ without a separate transpose.
 
 ---
+
+
+## Three details that make it real
+
+The algorithm was explained in Part 1. Turning it into a kernel surfaces three details worth calling out, because each one is a small window into how the hardware actually works.
+
+### 1. Why `exp2` instead of `exp`
+
+You may have noticed `tl.math.exp2` instead of `exp`, and a scale that looks odd:
+
+```python
+qk_scale = scale * 1.44269504089 # scale * log2(e)
+...
+p = tl.math.exp2(qk - new_mi[:, None])
+```
+
+GPUs have a fast hardware instruction for $2^x$, but not for $e^x$. So instead of computing $e^{x}$, we compute $2^{x\log_2 e}$, which is identically equal, we just pre-fold the $\log_2 e = 1.4427\ldots$ factor into the scale. Its the same math, but cheaper instruction.
+
+### 2. Causal masking, and a free optimisation
+
+A causal model can't attend to the future, so a query at position $i$ may only see keys at positions $j \le i$. We enforce it by setting the disallowed scores to $-\infty$ before the softmax:
+
+```python
+qk = tl.where(q_idx[:, None] >= k_idx[None, :], qk, float("-inf"))
+```
+
+If a whole K block sits entirely in the future of the current query block, every one of its scores becomes $-\infty$ and contributes nothing. So we need not even load it. Stopping the loop at the query block's own diagonal gives, for the later query blocks, roughly half the work:
+
+```python
+kv_end = (block_row + 1) * BLOCK_Q
+for start_kv in range(0, kv_end, BLOCK_KV):
+    ...
+```
+
+### 3. The 16-wide rule for `tl.dot`
+
+`tl.dot` runs on the GPU's **tensor cores**, which only multiply fixed-size tiles, the shared inner dimension must be at least 16.
+
+---
+
