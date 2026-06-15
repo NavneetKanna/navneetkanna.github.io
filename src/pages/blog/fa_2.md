@@ -178,3 +178,91 @@ $$q_\text{rot}\cdot k_\text{rot} \;=\; \underbrace{q_\text{rot}^{(1)}\cdot k_\te
  
 So we load each half with its own block pointer, rotate with plain arithmetic (no `cat`), and do two `tl.dot`s and add. No tile slicing anywhere.
 
+### A worked example
+
+Let's assume  `Q`, `K`, `V` to be this
+
+```
+tensor([[[[0.3581, 0.1616, 0.5714, 0.4795],
+          [0.5468, 0.3008, 0.9154, 0.3457],
+          [0.4201, 0.1406, 0.2273, 0.5269],
+          [0.1441, 0.1024, 0.8580, 0.8310],
+          [0.7828, 0.5347, 0.0038, 0.2535],
+          [0.3112, 0.3961, 0.2596, 0.3704],
+          [0.7789, 0.6267, 0.0297, 0.9068],
+          [0.9708, 0.1654, 0.0144, 0.4128]],
+
+         [[0.7147, 0.2785, 0.6463, 0.7070],
+          [0.0046, 0.2647, 0.3889, 0.6876],
+          [0.3702, 0.3406, 0.5874, 0.0967],
+          [0.2227, 0.3751, 0.3261, 0.0857],
+          [0.1634, 0.6659, 0.6811, 0.6651],
+          [0.7258, 0.4927, 0.7543, 0.2057],
+          [0.1071, 0.8613, 0.2727, 0.3571],
+          [0.1453, 0.2662, 0.1778, 0.9726]]],
+
+
+        [[[0.6436, 0.7744, 0.0494, 0.0897],
+          [0.8326, 0.0759, 0.1208, 0.3943],
+          [0.5721, 0.9949, 0.4025, 0.8175],
+          [0.3231, 0.4774, 0.9158, 0.3784],
+          [0.9886, 0.4412, 0.2792, 0.2915],
+          [0.7545, 0.5258, 0.3754, 0.5061],
+          [0.1726, 0.5226, 0.8953, 0.3112],
+          [0.2522, 0.9481, 0.3493, 0.3176]],
+
+         [[0.9558, 0.9222, 0.7712, 0.1684],
+          [0.7397, 0.6067, 0.9695, 0.3222],
+          [0.6258, 0.9842, 0.9909, 0.3784],
+          [0.1019, 0.5079, 0.9599, 0.1936],
+          [0.7737, 0.6805, 0.4499, 0.2204],
+          [0.2879, 0.6809, 0.8073, 0.9478],
+          [0.4164, 0.1058, 0.6489, 0.4592],
+          [0.4539, 0.3612, 0.0810, 0.8282]]]])
+```
+
+Let's trace block 0 with the same toy setup as Part 1 ($\text{BLOCK}=4$, $D=4$ so $\text{HALF}=2$), taking $Q=K=V$ for the first head. Block 0 loads positions 0–3, split into halves:
+
+```
+q1 (cols 0-1)        q2 (cols 2-3)
+[0.3581, 0.1616]     [0.5714, 0.4795]
+[0.5468, 0.3008]     [0.9154, 0.3457]
+[0.4201, 0.1406]     [0.2273, 0.5269]
+[0.1441, 0.1024]     [0.8580, 0.8310]
+```
+
+The per-pair speeds are $[1.0,\,0.01]$, so position $p$ has angles $[p\cdot 1.0,\;p\cdot 0.01]$. We load the **first half** of the cos/sin tables for positions 0–3 (the two halves of the table are identical, so the first half is enough):
+
+```
+cos                       sin
+[ 1.0000,  1.0000]        [0.0000, 0.0000]   ← pos 0: no turn
+[ 0.5403,  0.9999]        [0.8415, 0.0100]   ← pos 1
+[-0.4161,  0.9998]        [0.9093, 0.0200]   ← pos 2
+[-0.9900,  0.9996]        [0.1411, 0.0300]   ← pos 3
+```
+
+Rotate with two lines, `q_rot1 = q1·cos − q2·sin` and `q_rot2 = q2·cos + q1·sin`:
+
+```
+q_rot1                    q_rot2
+[ 0.3581,  0.1616]        [ 0.5714,  0.4795]   ← pos 0 unchanged (cos=1, sin=0)
+[-0.4748,  0.2973]        [ 0.9547,  0.3487]
+[-0.3815,  0.1300]        [ 0.2874,  0.5296]
+[-0.2637,  0.0774]        [-0.8291,  0.8337]
+```
+
+Position 0 comes out identical to the input, no turn, and the further down the block, the more the values swing. That's the position being stamped in. Now the scores, as two half matmuls summed:
+
+```
+qk = q_rot1 @ k_rot1ᵀ + q_rot2 @ k_rot2ᵀ
+[ 0.7108  0.5907  0.3026 -0.1559]
+[ 0.5907  1.3469  0.6789 -0.3526]
+[ 0.3026  0.6789  0.5255  0.3139]
+[-0.1559 -0.3526  0.3139  1.4580]
+```
+
+which is the same for what you'd get by rotating the full vectors and doing one dot, this is just the distributive law. From here the causal mask and the streaming softmax from Part 1 take over unchanged, and $V$ is never touched.
+
+A more detailed walkthrough of this example is in the comments, feel [free to go through it](https://github.com/NavneetKanna/flash-attention-triton/blob/a04b402b8f5ff168987c1446ff4dab0d8d17a6ad/flash_attn.py#L159)
+
+---
