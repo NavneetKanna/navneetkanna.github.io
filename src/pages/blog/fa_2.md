@@ -120,3 +120,32 @@ for start_kv in range(0, kv_end, BLOCK_KV):
 
 ---
 
+## Correctness before speed
+
+It is important to test your logic against pytorch
+
+```python
+out = flash_attention(q, k, v)
+ref = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+torch.testing.assert_close(out, ref, atol=1e-2, rtol=0)
+```
+
+A tip from experience: a logic bug often hides under the high tolerance.
+
+---
+
+## Fusing RoPE into the kernel
+
+### RoPE in two paragraphs
+
+Attention is blind to word order, $Q K^\top$ doesn't know where tokens sit. RoPE fixes this not by *adding* a position vector, but by **rotating** each query and key by an angle proportional to its position. Split a vector into pairs of coordinates; pair $i$ at position $p$ is rotated by angle $p\cdot\theta_i$, where the per-pair speeds $\theta_i$ run from fast to slow.
+
+The payoff: when a rotated query at position $m$ meets a rotated key at position $n$, their dot product depends only on $m-n$. Absolute positions cancel. And RoPE only ever touches $Q$ and $K$ — never $V$ — and only affects the *scores*. So in the kernel it sits in right before `tl.dot(q, k)`, and nothing downstream changes.
+
+### Where it goes
+
+There are two honest ways to add RoPE:
+
+1. **Rotate outside the kernel.** Apply RoPE to $Q$ and $K$ in plain PyTorch, then feed the rotated tensors into the unchanged attention kernel.
+2. **Fuse it.** Rotate inside the kernel, in SRAM, so you never write rotated $Q$/$K$ back to HBM.
+Fusing trades a little redundant compute for saved memory traffic. Because each query block streams over all K blocks, a fused kernel re-rotates each K block once per query block, its redundant work, but it avoids a full round-trip of rotated $Q$/$K$ through HBM. Whether that's a win is an empirical question, which is exactly what the benchmark below address.
