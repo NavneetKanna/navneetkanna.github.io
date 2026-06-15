@@ -297,3 +297,13 @@ fp16 matters here sine SDPA only uses its FA2 backend in fp16/bf16.
 ![runtime vs sequence length](/assets/images/runtime_vs_seqlen.png)
 ![achieved TFLOP/s vs sequence length](/assets/images/tflops_vs_seqlen.png)
 
+### The Results
+
+The kernel **matches FlashAttention-2 across the whole range** and is meaningfully ahead in the mid regime, 113 vs 91 TFLOP/s at $N=2048$, 133 vs 122 at $N=4096$ and stays a little ahead at the longest
+sequence (147 vs 141 at $N=8192$). I want to note something here: I have *not* beat pytorch FA2. It's that in this specific regime, forward pass only, fp16, on a single RTX 4090, a hand-written
+Triton kernel reaches the same throughput as PyTorch's FA2 backend, and edges ahead at mid lengths most likely because FA2 carries dispatch overhead and is tuned for the harder training/backward case.
+
+Putting that ~145 TFLOP/s in context: the RTX 4090's fp16 tensor-core ceiling with fp32 accumulation is roughly 165 TFLOP/s, so the kernel is running at about **88% of peak** at long sequences.
+The naive baseline is flat near 5–8 TFLOP/s regardless of length, because it's bandwidth-bound: it writes and re-reads the full $N\times N$ score matrix from HBM, exactly the $O(N^2)$ memory trap Part 1
+discussed about. It's also the only implementation whose memory grows quadratically.
+
