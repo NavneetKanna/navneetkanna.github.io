@@ -266,3 +266,34 @@ which is the same for what you'd get by rotating the full vectors and doing one 
 A more detailed walkthrough of this example is in the comments, feel [free to go through it](https://github.com/NavneetKanna/flash-attention-triton/blob/a04b402b8f5ff168987c1446ff4dab0d8d17a6ad/flash_attn.py#L159)
 
 ---
+
+## Benchmarks
+
+All numbers are forward-pass only, causal, **fp16** (with fp32 accumulation), on a mostly idle RTX 4090, $B=2$, $H=16$, $D=64$. Timing uses `triton.testing.do_bench` (25 warmup iters, 100 measured,
+L2 flushed between reps), reporting the **median**. FLOPs are counted as $4 \cdot B H N^2 D$ for the two matmuls, halved for causality, so "achieved TFLOP/s" is comparable across implementations.
+Baselines: a naive PyTorch implementation (materialises the full $N\times N$ score matrix) and `torch.scaled_dot_product_attention`, which in fp16 dispatches to the **FlashAttention-2** backend.
+fp16 matters here sine SDPA only uses its FA2 backend in fp16/bf16.
+
+**Runtime (ms) vs sequence length**
+
+| seq_len | naive | sdpa (FA2) | ours (triton) |
+|---|---|---|---|
+| 512 | 0.127 | 0.032 | 0.024 |
+| 1024 | 0.719 | 0.080 | 0.054 |
+| 2048 | 3.056 | 0.189 | 0.152 |
+| 4096 | 12.104 | 0.563 | 0.516 |
+| 8192 | 48.970 | 1.946 | 1.902 |
+
+**Achieved TFLOP/s vs sequence length**
+
+| seq_len | naive | sdpa (FA2) | ours (triton) |
+|---|---|---|---|
+| 512 | 8.5 | 33.8 | 45.6 |
+| 1024 | 6.0 | 53.8 | 79.1 |
+| 2048 | 5.6 | 90.7 | 113.4 |
+| 4096 | 5.7 | 122.0 | 133.2 |
+| 8192 | 5.6 | 141.3 | 144.6 |
+
+![runtime vs sequence length](/assets/images/runtime_vs_seqlen.png)
+![achieved TFLOP/s vs sequence length](/assets/images/tflops_vs_seqlen.png)
+
