@@ -1,6 +1,6 @@
 ---
 layout: ../../layouts/BlogPost.astro
-title: "Writing FlashAttention in Triton (Part 1): From the Algorithm to a Real Kernel, and Fusing RoPE "
+title: "Writing FlashAttention in Triton (Part 2): From the Algorithm to a Real Kernel, and Fusing RoPE "
 date: 2026-06-15
 ---
 
