@@ -148,4 +148,33 @@ There are two honest ways to add RoPE:
 
 1. **Rotate outside the kernel.** Apply RoPE to $Q$ and $K$ in plain PyTorch, then feed the rotated tensors into the unchanged attention kernel.
 2. **Fuse it.** Rotate inside the kernel, in SRAM, so you never write rotated $Q$/$K$ back to HBM.
+
 Fusing trades a little redundant compute for saved memory traffic. Because each query block streams over all K blocks, a fused kernel re-rotates each K block once per query block, its redundant work, but it avoids a full round-trip of rotated $Q$/$K$ through HBM. Whether that's a win is an empirical question, which is exactly what the benchmark below address.
+
+### First Bug
+
+My first fused version indexed the cos/sin tables with the same `offset` used for Q/K/V:
+
+```python
+offset = batch_head_idx * stride_q_h
+cos = tl.load(Cos + offset + ...)
+```
+
+But the cos/sin tables have shape `(N, D)`, they have **no batch or head dimension**, because the rotation for a position is the same for every batch and head. The first program looked fine; everything else read garbage. The kernel already computes `q_idx` and `k_idx` for the causal mask, those *are* the positions, so RoPE just reuses them.
+
+### Second Bug
+ 
+The clean way to write the rotation is to split a loaded tile in half and recombine:
+ 
+```python
+x1, x2 = x[:, :D//2], x[:, D//2:] # slice a loaded tile
+x_rot = tl.cat([-x2, x1], axis=1) # swap halves, negate one
+return x * cos + x_rot * sin
+```
+ 
+This didn't compile: slicing a loaded tile raised `unsupported tensor index`. The fix that avoids both is a small algebra trick. Instead of stitching the rotated halves back into one tile, **keep them apart and fold the rotation into the QK dot as two half-width matmuls**, using the fact that a dot product over the full head-dim equals the sum over each half:
+ 
+$$q_\text{rot}\cdot k_\text{rot} \;=\; \underbrace{q_\text{rot}^{(1)}\cdot k_\text{rot}^{(1)}}_{\text{first half}} \;+\; \underbrace{q_\text{rot}^{(2)}\cdot k_\text{rot}^{(2)}}_{\text{second half}}$$
+ 
+So we load each half with its own block pointer, rotate with plain arithmetic (no `cat`), and do two `tl.dot`s and add. No tile slicing anywhere.
+
