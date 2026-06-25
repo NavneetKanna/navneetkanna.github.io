@@ -59,6 +59,25 @@ import BaseLayout from '../layouts/BaseLayout.astro'
                 <div class="section-label">Projects</div>
                 <div class="projects-list reveal">
 
+                    <!-- flash-attention-triton -->
+                    <div class="project-card featured">
+                        <div class="project-top">
+                            <span class="project-name">flash-attention-triton</span>
+                        </div>
+                        <p class="project-meta">FlashAttention 2 Forward Kernel in Triton</p>
+                        <ul class="project-bullets">
+                            <li>Implemented the FlashAttention 2 forward pass from scratch in Triton, with causal masking and fused Rotary Positional Embeddings (RoPE), to understand the algorithm at the hardware level.</li>
+                            <li>The kernel never materialises the full N&times;N score matrix in HBM. Q, K, and V are each read from HBM exactly once, reducing attention memory from O(N&sup2;) to O(N).</li>
+                            <li>Benchmarked on an RTX 4090 in fp16: reaches ~145 TFLOP/s at N=8192, roughly 88% of the fp16 tensor-core peak, matching PyTorch&rsquo;s FA2 backend and edging ahead in the mid-range.</li>
+                            <li>Fusing RoPE directly into the kernel is a consistent win over rotating outside. 2.5&times; faster at N=512, shrinking to 1.06&times; at N=8192 as the redundant K-rotation cost grows.</li>
+                            <li>Wrote two blog posts covering the algorithm, the kernel, two bugs hit during RoPE fusion, and a full benchmark analysis.</li>
+                        </ul>
+                        <div class="project-bottom">
+                            <a href="https://github.com/NavneetKanna/flash-attention-triton" target="_blank" rel="noopener" class="btn btn-accent">GitHub &rarr;</a>
+                            <a href="https://navneetkanna.com/blog/fa_1/" target="_blank" rel="noopener" class="btn">Blog &rarr;</a>
+                        </div>
+                    </div>
+
                     <!-- dlgrad -->
                     <div class="project-card featured">
                         <div class="project-top">
