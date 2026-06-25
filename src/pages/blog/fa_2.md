@@ -261,12 +261,14 @@ q_rot1                    q_rot2
 
 Position 0 comes out identical to the input, no turn, and the further down the block, the more the values swing. That's the position being stamped in. Now the scores, as two half matmuls summed:
 
-```
+```python
+"""
 qk = q_rot1 @ k_rot1ᵀ + q_rot2 @ k_rot2ᵀ
 [ 0.7108  0.5907  0.3026 -0.1559]
 [ 0.5907  1.3469  0.6789 -0.3526]
 [ 0.3026  0.6789  0.5255  0.3139]
 [-0.1559 -0.3526  0.3139  1.4580]
+"""
 ```
 
 which is the same for what you'd get by rotating the full vectors and doing one dot, this is just the distributive law. From here the causal mask and the streaming softmax from Part 1 take over unchanged, and $V$ is never touched.
