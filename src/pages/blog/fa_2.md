@@ -180,9 +180,10 @@ So we load each half with its own block pointer, rotate with plain arithmetic (n
 
 ### A worked example
 
-Let's assume  `Q`, `K`, `V` to be this
+Let's assume `Q`, `K`, `V` to be this
 
-```
+```python
+"""
 tensor([[[[0.3581, 0.1616, 0.5714, 0.4795],
           [0.5468, 0.3008, 0.9154, 0.3457],
           [0.4201, 0.1406, 0.2273, 0.5269],
@@ -219,36 +220,43 @@ tensor([[[[0.3581, 0.1616, 0.5714, 0.4795],
           [0.2879, 0.6809, 0.8073, 0.9478],
           [0.4164, 0.1058, 0.6489, 0.4592],
           [0.4539, 0.3612, 0.0810, 0.8282]]]])
+"""
 ```
 
 Let's trace block 0 with the same toy setup as Part 1 ($\text{BLOCK}=4$, $D=4$ so $\text{HALF}=2$), taking $Q=K=V$ for the first head. Block 0 loads positions 0–3, split into halves:
 
-```
+```python
+"""
 q1 (cols 0-1)        q2 (cols 2-3)
 [0.3581, 0.1616]     [0.5714, 0.4795]
 [0.5468, 0.3008]     [0.9154, 0.3457]
 [0.4201, 0.1406]     [0.2273, 0.5269]
 [0.1441, 0.1024]     [0.8580, 0.8310]
+"""
 ```
 
 The per-pair speeds are $[1.0,\,0.01]$, so position $p$ has angles $[p\cdot 1.0,\;p\cdot 0.01]$. We load the **first half** of the cos/sin tables for positions 0–3 (the two halves of the table are identical, so the first half is enough):
 
-```
+```python
+"""
 cos                       sin
-[ 1.0000,  1.0000]        [0.0000, 0.0000]   ← pos 0: no turn
-[ 0.5403,  0.9999]        [0.8415, 0.0100]   ← pos 1
-[-0.4161,  0.9998]        [0.9093, 0.0200]   ← pos 2
-[-0.9900,  0.9996]        [0.1411, 0.0300]   ← pos 3
+[ 1.0000,  1.0000]        [0.0000, 0.0000]   <- pos 0: no turn
+[ 0.5403,  0.9999]        [0.8415, 0.0100]   <- pos 1
+[-0.4161,  0.9998]        [0.9093, 0.0200]   <- pos 2
+[-0.9900,  0.9996]        [0.1411, 0.0300]   <- pos 3
+"""
 ```
 
 Rotate with two lines, `q_rot1 = q1·cos − q2·sin` and `q_rot2 = q2·cos + q1·sin`:
 
-```
+```python
+"""
 q_rot1                    q_rot2
-[ 0.3581,  0.1616]        [ 0.5714,  0.4795]   ← pos 0 unchanged (cos=1, sin=0)
+[ 0.3581,  0.1616]        [ 0.5714,  0.4795]   <- pos 0 unchanged (cos=1, sin=0)
 [-0.4748,  0.2973]        [ 0.9547,  0.3487]
 [-0.3815,  0.1300]        [ 0.2874,  0.5296]
 [-0.2637,  0.0774]        [-0.8291,  0.8337]
+"""
 ```
 
 Position 0 comes out identical to the input, no turn, and the further down the block, the more the values swing. That's the position being stamped in. Now the scores, as two half matmuls summed:
